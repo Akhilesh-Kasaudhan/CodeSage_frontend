@@ -9,70 +9,120 @@ import "prismjs/components/prism-java";
 import "prismjs/components/prism-css";
 import "prismjs/components/prism-jsx";
 
-export default function ReviewResult({ reviewedResult, loading, language }) {
+export default function ReviewResult({
+  reviewedResult,
+  loading,
+  language,
+  hasCodeInput,
+  isNewSubmission,
+}) {
   const [displayedResult, setDisplayedResult] = useState("");
-  const [streamingComplete, setStreamingComplete] = useState(false);
+  const [streamingComplete, setStreamingComplete] = useState(true);
   const reviewContainerRef = useRef(null);
+  const streamingRef = useRef(null);
+  const [lastReviewedResult, setLastReviewedResult] = useState(null);
 
   useEffect(() => {
-    if (reviewedResult && !streamingComplete) {
+    if (!hasCodeInput || !reviewedResult) {
       setDisplayedResult("");
-      setStreamingComplete(false);
-      let i = 0;
-      const resultLength = reviewedResult.length;
-      const streamingSpeed = Math.max(
-        10,
-        Math.min(30, Math.floor(resultLength / 100))
-      );
-
-      const streamText = () => {
-        if (i < resultLength) {
-          setDisplayedResult(reviewedResult.substring(0, i + 1));
-          i++;
-          setTimeout(streamText, streamingSpeed);
-        } else {
-          setStreamingComplete(true);
-        }
-      };
-
-      streamText();
+      setStreamingComplete(true);
+      setLastReviewedResult(null);
+      return;
     }
-  }, [reviewedResult]);
+    if (reviewedResult === lastReviewedResult) return;
 
-  // This effect runs when the component mounts or when the displayedResult or reviewedResult changes
+    // Clear existing timeout
+    if (streamingRef.current) {
+      clearTimeout(streamingRef.current);
+      streamingRef.current = null;
+    }
+
+    setDisplayedResult("");
+    setStreamingComplete(false);
+    setLastReviewedResult(reviewedResult);
+
+    let i = 0;
+    const resultLength = reviewedResult.length;
+    const streamingSpeed = Math.max(
+      10,
+      Math.min(30, Math.floor(resultLength / 100))
+    );
+    const streamText = () => {
+      if (i < resultLength) {
+        setDisplayedResult((prev) => prev + reviewedResult[i]);
+        i++;
+        streamingRef.current = setTimeout(streamText, streamingSpeed);
+      } else {
+        setStreamingComplete(true);
+        streamingRef.current = null;
+      }
+    };
+
+    streamText();
+
+    return () => {
+      if (streamingRef.current) {
+        clearTimeout(streamingRef.current);
+      }
+    };
+  }, [reviewedResult, hasCodeInput]);
+
+  // Clear timeout when component unmounts
+  useEffect(() => {
+    return () => {
+      if (streamingRef.current) {
+        clearTimeout(streamingRef.current);
+      }
+    };
+  }, []);
+
+  // Highlight and scroll effects
   useEffect(() => {
     Prism.highlightAll();
 
-    // Scroll to the bottom of the review container
     if (reviewContainerRef.current) {
       reviewContainerRef.current.scrollTop =
         reviewContainerRef.current.scrollHeight;
     }
+  }, [displayedResult, streamingComplete]);
 
-    // Copy button logic
-    const copyButtons = document.querySelectorAll(".copy-btn");
-    copyButtons.forEach((btn) => {
-      btn.onclick = () => {
+  useEffect(() => {
+    const handleCopyClick = (e) => {
+      const btn = e.target.closest(".copy-btn");
+      if (btn) {
         const code = btn.getAttribute("data-code");
-        navigator.clipboard.writeText(
-          code
-            .replace(/&quot;/g, '"')
-            .replace(/&lt;/g, "<")
-            .replace(/&gt;/g, ">")
-        );
-        btn.innerText = "Copied!";
-        setTimeout(() => (btn.innerText = "Copy"), 2000);
-      };
-    });
-
-    // Highlight the improved code once streaming is complete
-    if (streamingComplete) {
-      const improvedCodeBlock = document.querySelector(".improved-code");
-      if (improvedCodeBlock) {
-        Prism.highlightElement(improvedCodeBlock);
+        navigator.clipboard
+          .writeText(
+            code
+              .replace(/&quot;/g, '"')
+              .replace(/&lt;/g, "<")
+              .replace(/&gt;/g, ">")
+              .replace(/&amp;/g, "&")
+              .replace(/&nbsp;/g, " ")
+          )
+          .then(() => {
+            const originalText = btn.innerText;
+            btn.innerText = "Copied!";
+            setTimeout(() => {
+              if (btn) btn.innerText = originalText;
+            }, 2000);
+            toast.success("Code copied to clipboard!");
+          })
+          .catch((err) => {
+            toast.error("Failed to copy code");
+          });
       }
+    };
+    const container = reviewContainerRef.current;
+    if (container) {
+      container?.addEventListener("click", handleCopyClick);
     }
-  }, [displayedResult, reviewedResult, streamingComplete]);
+    return () => {
+      if (container) {
+        container.removeEventListener("click", handleCopyClick);
+      }
+    };
+  }, []);
 
   // Format the AI response to HTML
   const formatAIResponse = (text) => {
@@ -152,40 +202,33 @@ export default function ReviewResult({ reviewedResult, loading, language }) {
             <span className="animate-pulse">⏳</span>
             <span className="text-lg">Generating review...</span>
           </div>
-          {reviewedResult && (
-            <div
-              className="text-gray-100 ai-response"
-              dangerouslySetInnerHTML={{
-                __html: formatAIResponse(displayedResult),
-              }}
-            />
-          )}
         </div>
       ) : reviewedResult ? (
         <>
           <div
             className="text-gray-100 ai-response"
             dangerouslySetInnerHTML={{
-              __html: formatAIResponse(displayedResult),
+              __html: formatAIResponse(displayedResult || reviewedResult),
             }}
           />
-          {!streamingComplete && (
-            <div className="flex items-center gap-2 mt-2">
-              <div
-                className="h-2 w-2 bg-green-400 rounded-full animate-bounce"
-                style={{ animationDelay: "0ms" }}
-              />
-              <div
-                className="h-2 w-2 bg-green-400 rounded-full animate-bounce"
-                style={{ animationDelay: "150ms" }}
-              />
-              <div
-                className="h-2 w-2 bg-green-400 rounded-full animate-bounce"
-                style={{ animationDelay: "300ms" }}
-              />
-              <span className="text-sm text-gray-400 ml-2">Streaming...</span>
-            </div>
-          )}
+          {!streamingComplete &&
+            displayedResult.length < reviewedResult.length && (
+              <div className="flex items-center gap-2 mt-2">
+                <div
+                  className="h-2 w-2 bg-green-400 rounded-full animate-bounce"
+                  style={{ animationDelay: "0ms" }}
+                />
+                <div
+                  className="h-2 w-2 bg-green-400 rounded-full animate-bounce"
+                  style={{ animationDelay: "150ms" }}
+                />
+                <div
+                  className="h-2 w-2 bg-green-400 rounded-full animate-bounce"
+                  style={{ animationDelay: "300ms" }}
+                />
+                <span className="text-sm text-gray-400 ml-2">Streaming...</span>
+              </div>
+            )}
         </>
       ) : (
         <p className="text-gray-400 italic text-lg">

@@ -31,10 +31,7 @@ const loadHistory = () => {
 };
 export const reviewCode = createAsyncThunk(
   "review/reviewCode",
-  async (
-    { code, language }, // Set the token in headers
-    { dispatch, rejectWithValue }
-  ) => {
+  async ({ code, language }, { dispatch, rejectWithValue }) => {
     if (!code?.trim()) {
       return rejectWithValue("Please provide code to review.");
     }
@@ -70,9 +67,14 @@ export const reviewCode = createAsyncThunk(
           timestamp: new Date().toISOString(),
         })
       );
-      return result;
+      return {
+        result,
+        code,
+        language,
+      };
     } catch (err) {
-      console.error("API Error:", err);
+      // console.error("API Error:", err);
+
       return rejectWithValue(
         err.response?.data?.message || err.message || "Review failed"
       );
@@ -106,6 +108,12 @@ const reviewSlice = createSlice({
     clearReviewResult: (state) => {
       state.reviewedResult = "";
       clearReviewedResult(); // Clear reviewedResult from localStorage
+    },
+    clearInputAndResult: (state) => {
+      state.inputCode = "";
+      state.reviewedResult = "";
+      clearInputCode();
+      clearReviewedResult();
     },
     addToHistory: (state, action) => {
       state.history = [action.payload, ...state.history.slice(0, 9)];
@@ -147,6 +155,7 @@ export const {
   setLanguage,
   appendReviewChunk,
   clearReviewResult,
+  clearInputAndResult,
   addToHistory,
   clearHistory,
   setError,

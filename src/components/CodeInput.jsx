@@ -7,6 +7,7 @@ export default function CodeInput({ value, onChange }) {
   };
   return (
     <Textarea
+      value={value || ""}
       className="min-h-[150px]"
       placeholder="Paste your code here..."
       onChange={handleChange}

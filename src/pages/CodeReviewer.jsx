@@ -1,11 +1,13 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   setInputCode,
   setLanguage,
   reviewCode,
   clearAllData,
-} from "@/store/slices/reviewSlice";
+  clearReviewResult,
+  clearInputAndResult,
+} from "@/store/slices/reviewSlice.js";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
 import CodeInput from "@/components/CodeInput";
@@ -21,34 +23,43 @@ export default function CodeReviewer() {
   const { inputCode, language, reviewedResult, loading, history, error } =
     useSelector((state) => state.review);
 
+  const [isNewSubmission, setIsNewSubmission] = useState(false);
+
   useEffect(() => {
     if (error) {
       toast.error(error);
-      // console.error("Review error:", error);
     }
   }, [error]);
 
   const handleCodeInputChange = (newValue) => {
-    dispatch(setInputCode(newValue)); // Now you receive the string value
+    dispatch(setInputCode(newValue));
+    if (newValue && reviewedResult) {
+      dispatch(clearReviewResult());
+    } // Now you receive the string value
   };
 
   const handleSubmit = () => {
-    // console.log("Submit clicked"); // Debug log
     if (!inputCode.trim()) {
       toast.warning("Please enter some code to review");
       return;
     }
-    // console.log("Dispatching reviewCode with:", { inputCode, language }); // Debug log
+    setIsNewSubmission(true);
     dispatch(reviewCode({ code: inputCode, language }))
       .unwrap()
       .then(() => {
         toast.success("Code reviewed successfully!");
-        // console.log("Review successful"); // Debug log
       })
       .catch((error) => {
-        // console.error("Review failed:", error); // Debug log
         toast.error(error.message || "Failed to review code");
+      })
+      .finally(() => {
+        setIsNewSubmission(false);
       });
+  };
+
+  const handleClearInputAndResults = () => {
+    dispatch(clearInputAndResult());
+    toast.info("Cleared input and results");
   };
 
   return (
@@ -66,6 +77,7 @@ export default function CodeReviewer() {
         </h1>
 
         <CodeInput
+          value={inputCode} // Pass the value from Redux state
           onChange={handleCodeInputChange} // Pass the new handler
         />
 
@@ -82,17 +94,29 @@ export default function CodeReviewer() {
           >
             {loading ? "Reviewing..." : "Submit"}
           </Button>
+          <Button
+            variant="outline"
+            onClick={handleClearInputAndResults}
+            className="min-w-[120px] bg-gray-400"
+          >
+            Clear Input
+          </Button>
         </div>
 
         <ReviewResult
           loading={loading}
           reviewedResult={reviewedResult}
           language={language}
+          hasCodeInput={!!inputCode.trim()}
+          isNewSubmission={isNewSubmission}
         />
 
         <HistorySection
           history={history}
-          onClearHistory={() => dispatch(clearAllData())}
+          onClearHistory={() => {
+            dispatch(clearAllData());
+            toast.info("Cleared all history");
+          }}
         />
       </motion.div>
     </div>
