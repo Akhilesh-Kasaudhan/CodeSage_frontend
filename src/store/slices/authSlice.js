@@ -38,12 +38,20 @@ export const registerUser = createAsyncThunk(
   "user/register",
   async (userData, { rejectWithValue }) => {
     try {
+      console.log("Registering user with data:", userData);
       const response = await axios.post(`${baseURL}/auth/register`, userData);
+      console.log("Registration response:", response);
       if (response.status !== 201) {
-        throw new Error(`Registration failed with status: ${response.status}`);
+        // throw new Error(`Registration failed with status: ${response.status}`);
+        toast.error("Registration failed: No token received");
+        console.log("Registration failed: No token received");
       }
       return response.data;
     } catch (err) {
+      console.error("Error during registration:", err);
+      toast.error(
+        err?.response?.data?.message || "Registration failed: No token received"
+      );
       return rejectWithValue(
         err?.response?.data?.message || "Registration Failed"
       );
@@ -58,7 +66,10 @@ export const loginUser = createAsyncThunk(
       const response = await axios.post(`${baseURL}/auth/login`, userData);
       if (response.status !== 200) {
         throw new Error("Login failed");
+        console.log("Login failed: No token received");
       }
+
+      console.log("Login response:", response);
 
       // Ensure we're getting the token in the response
       if (!response.data.token) {
@@ -69,7 +80,9 @@ export const loginUser = createAsyncThunk(
       localStorage.setItem("userInfo", JSON.stringify(response.data));
 
       return response.data;
+      console.log("Login successful:", response.data);
     } catch (err) {
+      console.error("Error during login:", err);
       toast.error(
         err?.response?.data?.message || "Login failed: No token received"
       );
@@ -85,16 +98,21 @@ export const verifyAuth = createAsyncThunk(
       const userInfo = loadUserInfo();
 
       if (!userInfo?.token) {
+        console.log("No token found in local storage");
+        toast.error("No token found in local storage");
         throw new Error("No token found");
       }
 
       // Optional: Verify token is not expired
       if (isTokenExpired(userInfo.token)) {
+        console.log("Token expired");
+        toast.error("Token expired");
         throw new Error("Token expired");
       }
 
       return userInfo;
     } catch (error) {
+      console.error("Error during token verification:", error);
       localStorage.removeItem("userInfo"); // Clear local storage on error
       return rejectWithValue(error.message);
     }
