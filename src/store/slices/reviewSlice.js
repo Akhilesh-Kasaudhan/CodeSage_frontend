@@ -1,37 +1,21 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import {
-  loadReviewedResult,
-  loadInputCode,
-  loadLanguage,
-  saveReviewedResult,
-  saveInputCode,
-  saveLanguage,
-  clearReviewedResult,
-  clearAllReviewData,
-  clearInputCode,
-  clearLanguage,
-} from "../../lib/utils.js";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-// Helper function to get auth token
-const getAuthToken = () => {
-  const userInfo = localStorage.getItem("userInfo");
-  return userInfo ? JSON.parse(userInfo).token : null;
+
+const initialState = {
+  inputCode: "",
+  language: "javascript",
+  reviewedResult: "",
+  history: [],
+  loading: false,
+  error: null,
 };
 
-// Load history from localStorage
-const loadHistory = () => {
-  try {
-    return JSON.parse(localStorage.getItem("codeReviewHistory")) || [];
-  } catch (error) {
-    console.error("Failed to parse history", error);
-    return [];
-  }
-};
 export const reviewCode = createAsyncThunk(
   "review/reviewCode",
-  async ({ code, language }, { dispatch, rejectWithValue }) => {
+  async ({ code, language }, { dispatch, getState, rejectWithValue }) => {
     if (!code?.trim()) {
       return rejectWithValue("Please provide code to review.");
     }
@@ -39,7 +23,7 @@ export const reviewCode = createAsyncThunk(
       return rejectWithValue("Please provide a programming language.");
     }
 
-    const token = getAuthToken();
+    const token = getState().auth.userInfo?.token; // Get the token from the auth slice
     if (!token) {
       return rejectWithValue("Authentication required");
     }
@@ -54,7 +38,6 @@ export const reviewCode = createAsyncThunk(
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          // responseType: "stream", // you still want stream
         }
       );
       const result = response.data?.result || response.data;
@@ -67,14 +50,13 @@ export const reviewCode = createAsyncThunk(
           timestamp: new Date().toISOString(),
         })
       );
+      toast.success("Code reviewed successfully!");
       return {
         result,
         code,
         language,
       };
     } catch (err) {
-      // console.error("API Error:", err);
-
       return rejectWithValue(
         err.response?.data?.message || err.message || "Review failed"
       );
@@ -84,44 +66,29 @@ export const reviewCode = createAsyncThunk(
 
 const reviewSlice = createSlice({
   name: "review",
-  initialState: {
-    inputCode: loadInputCode(), // Load inputCode from localStorage
-    language: loadLanguage(), // Load language from localStorage
-    reviewedResult: loadReviewedResult(), // Load reviewedResult from localStorage
-    history: loadHistory(), // Load history from localStorage
-    loading: false,
-    error: null,
-  },
+  initialState,
   reducers: {
     setInputCode: (state, action) => {
       state.inputCode = action.payload;
-      saveInputCode(state.inputCode); // Save inputCode to localStorage
     },
     setLanguage: (state, action) => {
       state.language = action.payload;
-      saveLanguage(state.language); // Save language to localStorage
     },
     appendReviewChunk: (state, action) => {
       state.reviewedResult += action.payload;
-      saveReviewedResult(state.reviewedResult); // Save reviewedResult to localStorage
     },
     clearReviewResult: (state) => {
       state.reviewedResult = "";
-      clearReviewedResult(); // Clear reviewedResult from localStorage
     },
     clearInputAndResult: (state) => {
       state.inputCode = "";
       state.reviewedResult = "";
-      clearInputCode();
-      clearReviewedResult();
     },
     addToHistory: (state, action) => {
       state.history = [action.payload, ...state.history.slice(0, 9)];
-      localStorage.setItem("codeReviewHistory", JSON.stringify(state.history));
     },
     clearHistory: (state) => {
       state.history = [];
-      localStorage.removeItem("codeReviewHistory"); // Clear localStorage
     },
     setError: (state, action) => {
       state.error = action.payload;
@@ -131,7 +98,6 @@ const reviewSlice = createSlice({
       state.language = "javascript";
       state.reviewedResult = "";
       state.history = [];
-      clearAllReviewData();
     },
   },
   extraReducers: (builder) => {

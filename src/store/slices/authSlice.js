@@ -4,19 +4,6 @@ import toast from "react-hot-toast";
 
 const baseURL = import.meta.env.VITE_API_URL || "http://localhost:3000/api"; // Use environment variable for base URL
 
-// const baseURL = "http://localhost:3000/api"; // Fallback for local development
-// const baseURL = "https://code-reviewer-backend.onrender.com/api"; // Fallback for production
-
-// Helper function to safely parse localStorage
-const loadUserInfo = () => {
-  try {
-    const data = localStorage.getItem("userInfo");
-    return data ? JSON.parse(data) : null;
-  } catch (error) {
-    return null;
-  }
-};
-
 // Token expiration check helper
 const isTokenExpired = (token) => {
   try {
@@ -28,32 +15,27 @@ const isTokenExpired = (token) => {
 };
 
 const initialState = {
-  userInfo: loadUserInfo(),
+  userInfo: null,
   loading: false,
   error: null,
-  isAuthenticated: !!loadUserInfo()?.token, // Properly check for token existence
+  isAuthenticated: false,
 };
 
 export const registerUser = createAsyncThunk(
   "user/register",
   async (userData, { rejectWithValue }) => {
     try {
-      console.log("Registering user with data:", userData);
       const response = await axios.post(`${baseURL}/auth/register`, userData);
-      console.log("Registration response:", response);
-      if (response.status !== 201) {
-        // throw new Error(`Registration failed with status: ${response.status}`);
+      if (!response.data.token) {
         toast.error("Registration failed: No token received");
-        console.log("Registration failed: No token received");
+        throw new Error("No token received");
       }
+      toast.success("Registration successful!");
       return response.data;
     } catch (err) {
-      console.error("Error during registration:", err);
-      toast.error(
-        err?.response?.data?.message || "Registration failed: No token received"
-      );
+      toast.error(err?.response?.data?.message || "Registration failed");
       return rejectWithValue(
-        err?.response?.data?.message || "Registration Failed"
+        err?.response?.data?.message || "Registration failed"
       );
     }
   }
@@ -65,27 +47,18 @@ export const loginUser = createAsyncThunk(
     try {
       const response = await axios.post(`${baseURL}/auth/login`, userData);
       if (response.status !== 200) {
+        toast.error("Login failed: Invalid credentials");
         throw new Error("Login failed");
-        console.log("Login failed: No token received");
       }
 
-      console.log("Login response:", response);
-
-      // Ensure we're getting the token in the response
       if (!response.data.token) {
         toast.error("Login failed: No token received");
-        throw new Error("Login failed: No token received");
+        throw new Error(" No token received");
       }
-      // Save the token to local storage for future requests
-      localStorage.setItem("userInfo", JSON.stringify(response.data));
-
+      toast.success("Login successful!");
       return response.data;
-      console.log("Login successful:", response.data);
     } catch (err) {
-      console.error("Error during login:", err);
-      toast.error(
-        err?.response?.data?.message || "Login failed: No token received"
-      );
+      toast.error(err?.response?.data?.message || "Login failed");
       return rejectWithValue(err.response.data.message || "Login Failed");
     }
   }
@@ -93,27 +66,25 @@ export const loginUser = createAsyncThunk(
 
 export const verifyAuth = createAsyncThunk(
   "user/verifyAuth",
-  async (_, { rejectWithValue }) => {
+  async (_, { getState, rejectWithValue }) => {
     try {
-      const userInfo = loadUserInfo();
+      const { userInfo } = getState().auth;
 
       if (!userInfo?.token) {
-        console.log("No token found in local storage");
-        toast.error("No token found in local storage");
+        toast.error("No token found ");
         throw new Error("No token found");
       }
 
-      // Optional: Verify token is not expired
       if (isTokenExpired(userInfo.token)) {
-        console.log("Token expired");
         toast.error("Token expired");
         throw new Error("Token expired");
       }
 
       return userInfo;
     } catch (error) {
-      console.error("Error during token verification:", error);
-      localStorage.removeItem("userInfo"); // Clear local storage on error
+      toast.error(
+        error?.response?.data?.message || "Token verification failed"
+      );
       return rejectWithValue(error.message);
     }
   }
@@ -125,8 +96,9 @@ const authSlice = createSlice({
   reducers: {
     logout(state) {
       state.userInfo = null;
-      state.isAuthenticated = false; // Update the flag on logout
-      localStorage.removeItem("userInfo");
+      state.isAuthenticated = false;
+      state.error = null;
+      state.loading = false;
     },
     clearError(state) {
       state.error = null;
@@ -141,7 +113,6 @@ const authSlice = createSlice({
         state.loading = false;
         state.userInfo = action.payload;
         state.isAuthenticated = true;
-        localStorage.setItem("userInfo", JSON.stringify(action.payload));
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
@@ -153,7 +124,7 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
         state.userInfo = action.payload;
-        state.isAuthenticated = true; // Set authenticated flag to true
+        state.isAuthenticated = true;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
@@ -165,13 +136,12 @@ const authSlice = createSlice({
       .addCase(verifyAuth.fulfilled, (state, action) => {
         state.loading = false;
         state.userInfo = action.payload;
-        state.isAuthenticated = true; // Set authenticated flag to true
+        state.isAuthenticated = true;
       })
       .addCase(verifyAuth.rejected, (state) => {
         state.loading = false;
         state.userInfo = null;
-        state.isAuthenticated = false; // Set authenticated flag to false
-        state.userInfo = null; // Clear user info on verification failure
+        state.isAuthenticated = false;
       });
   },
 });
