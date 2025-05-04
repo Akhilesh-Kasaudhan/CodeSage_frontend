@@ -7,6 +7,7 @@ import {
   clearAllData,
   clearReviewResult,
   clearInputAndResult,
+  deleteCodeHistoryByUser,
 } from "@/store/slices/reviewSlice.js";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/Navbar";
@@ -59,7 +60,6 @@ export default function CodeReviewer() {
 
   const handleClearInputAndResults = () => {
     dispatch(clearInputAndResult());
-    toast.info("Cleared input and results");
   };
 
   return (
@@ -114,8 +114,14 @@ export default function CodeReviewer() {
         <HistorySection
           history={history}
           onClearHistory={() => {
-            dispatch(clearAllData());
-            toast.info("Cleared all history");
+            if (history.length === 0) {
+              toast.info("No history to clear");
+              return;
+            }
+            if (window.confirm("Are you sure you want to clear all history?")) {
+              dispatch(deleteCodeHistoryByUser());
+              toast.success("History cleared successfully!");
+            }
           }}
         />
       </motion.div>

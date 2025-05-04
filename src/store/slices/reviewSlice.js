@@ -64,6 +64,53 @@ export const reviewCode = createAsyncThunk(
   }
 );
 
+export const fetchCodeHistory = createAsyncThunk(
+  "review/fetchCodeHistory",
+  async (_, { getState, rejectWithValue }) => {
+    const token = getState().auth.userInfo?.token; // Get the token from the auth slice
+    if (!token) {
+      return rejectWithValue("Authentication required");
+    }
+    try {
+      const response = await axios.get(`${baseURL}/code/history`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log("Code history response:", response.data);
+      return response.data.codeHistory;
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message || err.message || "Failed to fetch history"
+      );
+    }
+  }
+);
+
+export const deleteCodeHistoryByUser = createAsyncThunk(
+  "review/deleteCodeHistory",
+  async (_, { getState, rejectWithValue }) => {
+    const token = getState().auth.userInfo?.token;
+    if (!token) return rejectWithValue("Authentication required");
+
+    try {
+      await axios.delete(`${baseURL}/code/history`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      toast.success("Code history deleted.");
+      return true;
+    } catch (err) {
+      return rejectWithValue(
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to delete code history."
+      );
+    }
+  }
+);
+
 const reviewSlice = createSlice({
   name: "review",
   initialState,
@@ -112,6 +159,30 @@ const reviewSlice = createSlice({
       .addCase(reviewCode.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || "Something went wrong.";
+      })
+      .addCase(fetchCodeHistory.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchCodeHistory.fulfilled, (state, action) => {
+        state.loading = false;
+        state.history = action.payload;
+      })
+      .addCase(fetchCodeHistory.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Failed to fetch code history.";
+      })
+      .addCase(deleteCodeHistoryByUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deleteCodeHistoryByUser.fulfilled, (state) => {
+        state.loading = false;
+        state.history = []; // Clear history after deletion
+      })
+      .addCase(deleteCodeHistoryByUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Failed to delete code history.";
       });
   },
 });
