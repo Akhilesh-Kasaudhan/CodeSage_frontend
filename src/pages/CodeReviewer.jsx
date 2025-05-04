@@ -7,6 +7,7 @@ import {
   clearAllData,
   clearReviewResult,
   clearInputAndResult,
+  fetchCodeHistory,
   deleteCodeHistoryByUser,
 } from "@/store/slices/reviewSlice.js";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,15 @@ export default function CodeReviewer() {
     useSelector((state) => state.review);
 
   const [isNewSubmission, setIsNewSubmission] = useState(false);
+  const [selectedHistory, setSelectedHistory] = useState(null);
+
+  useEffect(() => {
+    dispatch(fetchCodeHistory())
+      .unwrap()
+      .catch((err) => {
+        toast.error(err.message || "Failed to fetch code history");
+      });
+  }, [dispatch]);
 
   useEffect(() => {
     if (error) {
@@ -36,7 +46,7 @@ export default function CodeReviewer() {
     dispatch(setInputCode(newValue));
     if (newValue && reviewedResult) {
       dispatch(clearReviewResult());
-    } // Now you receive the string value
+    }
   };
 
   const handleSubmit = () => {
@@ -47,9 +57,6 @@ export default function CodeReviewer() {
     setIsNewSubmission(true);
     dispatch(reviewCode({ code: inputCode, language }))
       .unwrap()
-      .then(() => {
-        toast.success("Code reviewed successfully!");
-      })
       .catch((error) => {
         toast.error(error.message || "Failed to review code");
       })
@@ -60,71 +67,110 @@ export default function CodeReviewer() {
 
   const handleClearInputAndResults = () => {
     dispatch(clearInputAndResult());
+    setSelectedHistory(null);
+  };
+
+  const handleClearHistory = () => {
+    if (!history.length) {
+      toast.info("No history to clear");
+      return;
+    }
+    if (window.confirm("Are you sure you want to clear all history?")) {
+      dispatch(deleteCodeHistoryByUser());
+      setSelectedHistory(null);
+    }
   };
 
   return (
-    <div className="bg-gray-700 min-h-screen text-white">
+    <div className="bg-gray-700 min-h-screen text-white flex">
       <Navbar />
-      <motion.div
-        className="max-w-5xl mx-auto p-6 space-y-8 "
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -30 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h1 className="text-3xl font-bold text-center">
-          Welcome to CodeSage! ✨
-        </h1>
+      {/* Sidebar */}
+      <aside className="w-64 bg-gray-900 pt-6 p-4 overflow-y-auto h-screen sticky left-0 top-12 border-r border-gray-700">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-semibold">📜 History</h2>
 
-        <CodeInput
-          value={inputCode} // Pass the value from Redux state
-          onChange={handleCodeInputChange} // Pass the new handler
-        />
-
-        <div className="flex gap-4">
-          <LanguageSelect
-            language={language}
-            onChange={(value) => dispatch(setLanguage(value))}
-          />
-          <Button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="min-w-[120px]"
-            data-testid="submit-button" // For testing
-          >
-            {loading ? "Reviewing..." : "Submit"}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleClearInputAndResults}
-            className="min-w-[120px] bg-gray-400"
-          >
-            Clear Input
+          <Button variant="destructive" size="sm" onClick={handleClearHistory}>
+            Clear
           </Button>
         </div>
+        {history.length === 0 ? (
+          <p className="text-gray-400 text-sm">No history yet</p>
+        ) : (
+          <ul className="space-y-3">
+            {history.map((item, index) => (
+              <li
+                key={index}
+                onClick={() => setSelectedHistory(item)}
+                className={`cursor-pointer p-3 rounded-lg ${
+                  selectedHistory?.timestamp === item.timestamp
+                    ? "bg-gray-700 border border-blue-400"
+                    : "hover:bg-gray-800"
+                }`}
+              >
+                <p className="text-sm font-medium text-gray-300">
+                  {item.language}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {item.timestamp && !isNaN(Number(item.timestamp))
+                    ? new Date(Number(item.timestamp)).toLocaleString()
+                    : "Unknown time"}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </aside>
 
-        <ReviewResult
-          loading={loading}
-          reviewedResult={reviewedResult}
-          language={language}
-          hasCodeInput={!!inputCode.trim()}
-          isNewSubmission={isNewSubmission}
-        />
+      <main className="flex-1 p-6 max-w-5xl mx-auto">
+        <motion.div
+          className=" space-y-8 "
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -30 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h1 className="text-3xl font-bold text-center">
+            Welcome to CodeSage! ✨
+          </h1>
 
-        <HistorySection
-          history={history}
-          onClearHistory={() => {
-            if (history.length === 0) {
-              toast.info("No history to clear");
-              return;
-            }
-            if (window.confirm("Are you sure you want to clear all history?")) {
-              dispatch(deleteCodeHistoryByUser());
-              toast.success("History cleared successfully!");
-            }
-          }}
-        />
-      </motion.div>
+          <CodeInput
+            value={inputCode} // Pass the value from Redux state
+            onChange={handleCodeInputChange} // Pass the new handler
+          />
+
+          <div className="flex gap-4 flex-wrap">
+            <LanguageSelect
+              language={language}
+              onChange={(value) => dispatch(setLanguage(value))}
+            />
+            <Button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="min-w-[120px]"
+              data-testid="submit-button" // For testing
+            >
+              {loading ? "Reviewing..." : "Submit"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleClearInputAndResults}
+              className="min-w-[120px] bg-gray-400"
+            >
+              Clear Input
+            </Button>
+          </div>
+
+          <ReviewResult
+            loading={loading}
+            reviewedResult={reviewedResult}
+            language={language}
+            hasCodeInput={!!inputCode.trim()}
+            isNewSubmission={isNewSubmission}
+          />
+
+          {selectedHistory && <HistorySection item={selectedHistory} />}
+        </motion.div>
+      </main>
     </div>
   );
 }

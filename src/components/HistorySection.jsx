@@ -3,9 +3,7 @@ import { Button } from "@/components/ui/button";
 import Prism from "prismjs";
 import "prismjs/themes/prism-tomorrow.css";
 
-export default function HistorySection({ history, onClearHistory }) {
-  if (!history.length) return null;
-
+export default function HistorySection({ item }) {
   // Reuse the same formatting function from ReviewResult
   const formatAIResponse = (text) => {
     if (!text) return text;
@@ -34,57 +32,36 @@ export default function HistorySection({ history, onClearHistory }) {
   };
 
   return (
-    <div className="mt-10 p-6 bg-gray-900 rounded-lg">
+    <div className=" p-6 bg-gray-800 rounded-lg border border-gray-700 shadow-md">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-white">
-          📜 Code Review History
-        </h2>
-        <Button variant="destructive" size="sm" onClick={onClearHistory}>
-          Clear History
-        </Button>
+        <p className="text-sm text-gray-400">
+          Language:{" "}
+          <span className="font-medium text-gray-300">{item.language}</span>
+        </p>
+        {item.timestamp && (
+          <p className="text-xs text-gray-500">
+            {new Date(item.timestamp).toLocaleString()}
+          </p>
+        )}
       </div>
-      <div className="space-y-6">
-        {history.map((item, index) => (
-          <div
-            key={index}
-            className="p-6 rounded-lg bg-gray-800 border border-gray-700"
-          >
-            <div className="flex justify-between items-start mb-4">
-              <p className="text-sm text-gray-400">
-                Language:{" "}
-                <span className="font-medium text-gray-300">
-                  {item.language}
-                </span>
-              </p>
-              {item.timestamp && (
-                <p className="text-xs text-gray-500">
-                  {new Date(item.timestamp).toLocaleString()}
-                </p>
-              )}
-            </div>
-            <div className="mb-6">
-              <h3 className="font-semibold mb-3 text-gray-300">
-                Submitted Code:
-              </h3>
-              <div className="bg-gray-900 p-4 rounded-lg overflow-auto">
-                <pre className="language-javascript bg-gray-900 rounded-md overflow-x-auto">
-                  <code className={`language-${item.language}`}>
-                    {item.inputCode}
-                  </code>
-                </pre>
-              </div>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-3 text-gray-300">AI Review:</h3>
-              <div
-                className="bg-gray-900 p-4 rounded-lg overflow-auto text-gray-100 ai-response"
-                dangerouslySetInnerHTML={{
-                  __html: formatAIResponse(item.reviewedResult),
-                }}
-              />
-            </div>
-          </div>
-        ))}
+      <div className="mb-6">
+        <h3 className="font-semibold mb-3 text-gray-300">Submitted Code:</h3>
+        <div className="bg-gray-900 p-4 rounded-lg overflow-auto">
+          <pre className="language-javascript bg-gray-900 rounded-md overflow-x-auto">
+            <code className={`language-${item.language}`}>
+              {item.inputCode}
+            </code>
+          </pre>
+        </div>
+      </div>
+      <div>
+        <h3 className="font-semibold mb-3 text-gray-300">AI Review:</h3>
+        <div
+          className="bg-gray-900 p-4 rounded-lg overflow-auto text-gray-100 ai-response"
+          dangerouslySetInnerHTML={{
+            __html: formatAIResponse(item.reviewedResult),
+          }}
+        />
       </div>
     </div>
   );

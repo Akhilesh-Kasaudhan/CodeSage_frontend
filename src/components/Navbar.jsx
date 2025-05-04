@@ -12,14 +12,12 @@ export default function Navbar() {
   const { userInfo, isAuthenticated } = useSelector((state) => state.auth);
   const handleLogout = () => {
     dispatch(logout());
-    toast.success("Successfully logged out!"); // 👈 Toast on logout
-    setTimeout(() => {
-      navigate("/auth"); // 👈 Redirect after small delay
-    }, 1000);
+    toast.success("Successfully logged out!");
+    navigate("/auth");
   };
 
   return (
-    <nav className="flex justify-between items-center px-6 py-4 bg-gray-900 text-white flex-wrap">
+    <nav className="flex justify-between items-center px-6 py-4 bg-gray-900 text-white flex-wrap fixed top-0 left-0 w-full z-10 shadow-md">
       <div className="flex items-center gap-2">
         <span className="text-2xl font-bold">CodeSage 🦉</span>{" "}
         {/* <-- Logo and Name */}

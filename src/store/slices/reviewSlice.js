@@ -47,7 +47,7 @@ export const reviewCode = createAsyncThunk(
           inputCode: code,
           language,
           reviewedResult: result,
-          timestamp: new Date().toISOString(),
+          timestamp: Date.now(),
         })
       );
       toast.success("Code reviewed successfully!");
