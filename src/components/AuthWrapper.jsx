@@ -28,7 +28,7 @@ export const AuthWrapper = ({ children }) => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="flex justify-center items-center h-screen bg-gradient-to-br from-blue-50 to-indigo-100 ">
         <div>Loading authentication state...</div>
       </div>
     );
