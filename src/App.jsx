@@ -22,6 +22,7 @@ export default function App() {
           <AuthWrapper>
             <Toaster position="top-right" reverseOrder={false} />
             <Routes>
+              <Route path="/" element={<Navigate to="/auth" replace />} />
               <Route path="/auth" element={<Auth />} />
               <Route
                 path="/code-reviewer"
