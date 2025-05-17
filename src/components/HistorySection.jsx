@@ -1,9 +1,8 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import Prism from "prismjs";
+import moment from "moment";
 import "prismjs/themes/prism-tomorrow.css";
 
 export default function HistorySection({ item }) {
+  console.log("HistorySection item", item);
   // Reuse the same formatting function from ReviewResult
   const formatAIResponse = (text) => {
     if (!text) return text;
@@ -38,9 +37,9 @@ export default function HistorySection({ item }) {
           Language:{" "}
           <span className="font-medium text-gray-300">{item.language}</span>
         </p>
-        {item.timestamp && (
+        {item.createdAt && (
           <p className="text-xs text-gray-500">
-            {new Date(item.timestamp).toLocaleString()}
+            {moment(item.createdAt).format("MMMM Do YYYY, h:mm:ss a")}
           </p>
         )}
       </div>
@@ -48,9 +47,7 @@ export default function HistorySection({ item }) {
         <h3 className="font-semibold mb-3 text-gray-300">Submitted Code:</h3>
         <div className="bg-gray-900 p-4 rounded-lg overflow-auto">
           <pre className="language-javascript bg-gray-900 rounded-md overflow-x-auto">
-            <code className={`language-${item.language}`}>
-              {item.inputCode}
-            </code>
+            <code className={`language-${item.language}`}>{item.code}</code>
           </pre>
         </div>
       </div>
@@ -59,7 +56,7 @@ export default function HistorySection({ item }) {
         <div
           className="bg-gray-900 p-4 rounded-lg overflow-auto text-gray-100 ai-response"
           dangerouslySetInnerHTML={{
-            __html: formatAIResponse(item.reviewedResult),
+            __html: formatAIResponse(item.reviewResult),
           }}
         />
       </div>

@@ -16,6 +16,7 @@ import CodeInput from "@/components/CodeInput";
 import LanguageSelect from "@/components/LanguageSelect";
 import ReviewResult from "@/components/ReviewResult";
 import HistorySection from "@/components/HistorySection";
+import moment from "moment";
 
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
@@ -82,10 +83,10 @@ export default function CodeReviewer() {
   };
 
   return (
-    <div className="bg-gray-700 min-h-screen text-white flex">
+    <div className="bg-gray-700 relative min-h-screen text-white flex">
       <Navbar />
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-900 pt-6 p-4 overflow-y-auto h-screen sticky left-0 top-12 border-r border-gray-700">
+      <aside className="w-64 bg-gray-900 pt-6 p-4 overflow-y-auto h-screen sticky left-0 top-16 mt-12  border-r border-gray-700 z-40">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">📜 History</h2>
 
@@ -111,9 +112,11 @@ export default function CodeReviewer() {
                   {item.language}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {item.timestamp && !isNaN(Number(item.timestamp))
-                    ? new Date(Number(item.timestamp)).toLocaleString()
-                    : "Unknown time"}
+                  {item.createdAt && (
+                    <span>
+                      {moment(item.createdAt).format("MMMM Do YYYY, h:mm:ss a")}
+                    </span>
+                  )}
                 </p>
               </li>
             ))}
@@ -121,7 +124,7 @@ export default function CodeReviewer() {
         )}
       </aside>
 
-      <main className="flex-1 p-6 max-w-5xl mx-auto">
+      <main className="flex-1 p-6 max-w-5xl mx-auto mt-12">
         <motion.div
           className=" space-y-8 "
           initial={{ opacity: 0, y: 30 }}

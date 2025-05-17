@@ -1,6 +1,8 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 const Home = () => {
+  const navigate = useNavigate();
   return (
     <main className="min-h-screen bg-gray-900 text-white flex flex-col items-center px-6 py-10 space-y-16">
       {/* Hero Section */}
@@ -13,11 +15,11 @@ const Home = () => {
           the power of AI.
         </p>
         <div className="space-x-4">
-          <button className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl text-white font-semibold">
+          <button
+            onClick={() => navigate("/auth")}
+            className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl text-white font-semibold"
+          >
             Try Now
-          </button>
-          <button className="bg-gray-800 hover:bg-gray-700 px-6 py-3 rounded-xl text-gray-200 border border-gray-600">
-            Learn More
           </button>
         </div>
       </section>

@@ -20,11 +20,13 @@ export const AuthWrapper = ({ children }) => {
       const currentPath = window.location.pathname;
       if (isAuthenticated && currentPath === "/auth") {
         navigate("/code-reviewer");
-      } else if (!isAuthenticated && currentPath !== "/auth") {
+      } else if (!isAuthenticated && currentPath === "/auth") {
         navigate("/auth");
+      } else if (!isAuthenticated) {
+        navigate("/");
       }
     }
-  }, [isAuthenticated, loading, navigate]);
+  }, [isAuthenticated]);
 
   if (loading) {
     return (

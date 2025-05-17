@@ -12,7 +12,7 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  return isAuthenticated ? children : <Navigate to="/auth" replace />;
+  return isAuthenticated ? children : <Navigate to="/auth" />;
 }
 // This component checks if the user is authenticated before rendering the children components.
 //  If not authenticated, it redirects to the /auth route.

@@ -13,6 +13,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { AuthWrapper } from "./components/AuthWrapper";
 import NotFound from "./pages/NotFound";
 import { PersistGate } from "redux-persist/integration/react";
+import Home from "@/pages/Home";
 
 export default function App() {
   return (
@@ -22,7 +23,7 @@ export default function App() {
           <AuthWrapper>
             <Toaster position="top-right" reverseOrder={false} />
             <Routes>
-              <Route path="/" element={<Navigate to="/auth" replace />} />
+              <Route path="/" element={<Home />} />
               <Route path="/auth" element={<Auth />} />
               <Route
                 path="/code-reviewer"
