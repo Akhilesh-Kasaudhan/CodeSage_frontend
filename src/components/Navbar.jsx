@@ -17,7 +17,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="flex justify-between items-center px-6 py-4 bg-gray-900 text-white flex-wrap fixed top-0 left-0 w-full  shadow-md">
+    <nav className="flex justify-between items-center px-6 py-4 bg-gray-900 text-white flex-wrap fixed top-0 left-0 w-full  shadow-md z-20">
       <div className="flex items-center gap-2">
         <Link to="/" className="flex items-center gap-2">
           <span className="text-2xl font-bold">CodeSage 🦉</span>

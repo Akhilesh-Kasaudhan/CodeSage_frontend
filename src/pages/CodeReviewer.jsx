@@ -86,7 +86,7 @@ export default function CodeReviewer() {
     <div className="bg-gray-700 relative min-h-screen text-white flex">
       <Navbar />
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-900 pt-6 p-4 overflow-y-auto h-screen sticky left-0 top-16 mt-12  border-r border-gray-700 z-40">
+      <aside className="w-64 bg-gray-900 pt-6 p-4 overflow-y-auto h-screen sticky left-0 top-16 mt-12  border-r border-gray-700 shadow-lg z-10">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">📜 History</h2>
 
