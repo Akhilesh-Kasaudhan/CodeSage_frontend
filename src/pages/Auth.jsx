@@ -67,7 +67,6 @@ const Auth = () => {
   const onLoginSubmit = async (data) => {
     try {
       await dispatch(loginUser(data)).unwrap();
-      toast.success("Login successful!");
       resetLoginForm();
     } catch (error) {
       // Handle error if needed

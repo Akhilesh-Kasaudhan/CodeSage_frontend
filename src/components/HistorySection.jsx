@@ -2,7 +2,6 @@ import moment from "moment";
 import "prismjs/themes/prism-tomorrow.css";
 
 export default function HistorySection({ item }) {
-  console.log("HistorySection item", item);
   // Reuse the same formatting function from ReviewResult
   const formatAIResponse = (text) => {
     if (!text) return text;

@@ -77,7 +77,6 @@ export const fetchCodeHistory = createAsyncThunk(
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log("Code history response:", response.data);
       return response.data.codeHistory;
     } catch (err) {
       return rejectWithValue(
