@@ -93,7 +93,7 @@ export const deleteCodeHistoryByUser = createAsyncThunk(
     if (!token) return rejectWithValue("Authentication required");
 
     try {
-      await axios.delete(`${baseURL}/code/history`, {
+      await axios.delete(`${baseURL}/code/history/all`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
