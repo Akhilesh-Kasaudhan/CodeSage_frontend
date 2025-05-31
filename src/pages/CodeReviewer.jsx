@@ -17,7 +17,7 @@ import LanguageSelect from "@/components/LanguageSelect";
 import ReviewResult from "@/components/ReviewResult";
 import HistorySection from "@/components/HistorySection";
 import moment from "moment";
-
+import { AlignJustify } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "react-toastify";
 
@@ -28,6 +28,7 @@ export default function CodeReviewer() {
 
   const [isNewSubmission, setIsNewSubmission] = useState(false);
   const [selectedHistory, setSelectedHistory] = useState(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
     dispatch(fetchCodeHistory())
@@ -86,45 +87,71 @@ export default function CodeReviewer() {
     <div className="bg-gray-700 relative min-h-screen text-white flex">
       <Navbar />
       {/* Sidebar */}
-      <aside className="w-64 bg-gray-900 pt-6 p-4 overflow-y-auto h-screen sticky left-0 top-16 mt-12  border-r border-gray-700 shadow-lg z-10">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">📜 History</h2>
+      {isSidebarOpen ? (
+        <aside className="sm:w-80 w-full bg-gray-900 pt-6 px-4 overflow-y-auto h-screen fixed left-0 top-4 mt-12  border-r border-gray-700 shadow-lg z-10">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+            <div className="flex items-center justify-between sm:justify-start sm:gap-4 mb-6">
+              <h2 className="text-xl font-semibold text-white">History</h2>
 
-          <Button variant="destructive" size="sm" onClick={handleClearHistory}>
-            Clear
-          </Button>
-        </div>
-        {history.length === 0 ? (
-          <p className="text-gray-400 text-sm">No history yet</p>
-        ) : (
-          <ul className="space-y-3">
-            {history.map((item, index) => (
-              <li
-                key={index}
-                onClick={() => setSelectedHistory(item)}
-                className={`cursor-pointer p-3 rounded-lg ${
-                  selectedHistory?.timestamp === item.timestamp
-                    ? "bg-gray-700 border border-blue-400"
-                    : "hover:bg-gray-800"
-                }`}
+              <Button
+                variant="destructive"
+                size="sm"
+                className="w-fit sm:w-auto"
+                onClick={handleClearHistory}
               >
-                <p className="text-sm font-medium text-gray-300">
-                  {item.language}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {item.createdAt && (
-                    <span>
-                      {moment(item.createdAt).format("MMMM Do YYYY, h:mm:ss a")}
-                    </span>
-                  )}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </aside>
+                Clear
+              </Button>
+              <AlignJustify
+                className="text-gray-400 hover:text-white cursor-pointer  sm:hidden"
+                onClick={() => setIsSidebarOpen(false)}
+              />
+            </div>
+          </div>
+          {history.length === 0 ? (
+            <p className="text-gray-400 text-sm">No history yet</p>
+          ) : (
+            <ul className="space-y-3">
+              {history.map((item, index) => (
+                <li
+                  key={index}
+                  onClick={() => setSelectedHistory(item)}
+                  className={`cursor-pointer p-3 rounded-lg transition-colors duration-200 ${
+                    selectedHistory?.timestamp === item.timestamp
+                      ? "bg-gray-700 border border-blue-400"
+                      : "hover:bg-gray-800"
+                  }`}
+                >
+                  <p className="text-sm font-medium text-gray-300">
+                    {item.language}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {item.createdAt && (
+                      <span>
+                        {moment(item.createdAt).format(
+                          "MMMM Do YYYY, h:mm:ss a"
+                        )}
+                      </span>
+                    )}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </aside>
+      ) : (
+        <div className="w-16 flex items-center justify-center mt-12 sticky top-16 left-0 h-screen bg-gray-900 border-r border-gray-700 z-10">
+          <AlignJustify
+            className="text-gray-400 hover:text-white cursor-pointer"
+            onClick={() => setIsSidebarOpen(true)}
+          />
+        </div>
+      )}
 
-      <main className="flex-1 p-6 max-w-5xl mx-auto mt-12">
+      <main
+        className={`flex-1 p-6 mt-12 transition-all duration-300 ${
+          isSidebarOpen ? "ml-0 sm:ml-80" : "ml-0"
+        }`}
+      >
         <motion.div
           className=" space-y-8 "
           initial={{ opacity: 0, y: 30 }}
@@ -136,10 +163,7 @@ export default function CodeReviewer() {
             Welcome to CodeSage! ✨
           </h1>
 
-          <CodeInput
-            value={inputCode} // Pass the value from Redux state
-            onChange={handleCodeInputChange} // Pass the new handler
-          />
+          <CodeInput value={inputCode} onChange={handleCodeInputChange} />
 
           <div className="flex gap-4 flex-wrap">
             <LanguageSelect
@@ -150,7 +174,6 @@ export default function CodeReviewer() {
               onClick={handleSubmit}
               disabled={loading}
               className="min-w-[120px]"
-              data-testid="submit-button" // For testing
             >
               {loading ? "Reviewing..." : "Submit"}
             </Button>

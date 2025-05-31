@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,11 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle } from "lucide-react";
 import { toast } from "react-hot-toast";
 import axios from "axios";
 
+//Schemas for validation
 const registerSchema = z.object({
   username: z.string().min(3, "Username is too short"),
   email: z.string().email("Invalid email"),
@@ -24,10 +23,13 @@ const loginSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
+const ErrorMessage = ({ message }) =>
+  message ? <p className="text-sm text-red-500">{message}</p> : null;
+
 const Auth = () => {
   const [tab, setTab] = useState("login");
-  const [apiError, setApiError] = useState(null);
-  const [registerSuccess, setRegisterSuccess] = useState(false);
+  // const [apiError, setApiError] = useState(null);
+  // const [registerSuccess, setRegisterSuccess] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const dispatch = useDispatch();
   const { loading, error, userInfo } = useSelector((state) => state.auth);
@@ -36,8 +38,6 @@ const Auth = () => {
 
   useEffect(() => {
     dispatch(clearError());
-    setApiError(null);
-    setRegisterSuccess(false);
   }, [tab, dispatch]);
 
   useEffect(() => {
@@ -45,6 +45,8 @@ const Auth = () => {
       navigate("/code-reviewer");
     }
   }, [userInfo, navigate]);
+
+  //Form:login
 
   const {
     register: registerLogin,
@@ -55,6 +57,7 @@ const Auth = () => {
     resolver: zodResolver(loginSchema),
   });
 
+  //form:register
   const {
     register: registerRegister,
     handleSubmit: handleRegisterSubmit,
@@ -64,67 +67,48 @@ const Auth = () => {
     resolver: zodResolver(registerSchema),
   });
 
-  const onLoginSubmit = async (data) => {
-    try {
-      await dispatch(loginUser(data)).unwrap();
-      resetLoginForm();
-    } catch (error) {
-      // Handle error if needed
-      if (error) {
-        toast.error(error.response?.data?.message || "Login failed");
+  const onLoginSubmit = useCallback(
+    async (data) => {
+      try {
+        await dispatch(loginUser(data)).unwrap();
+        toast.success("Login successful!");
+        resetLoginForm();
+        navigate("/code-reviewer");
+      } catch (err) {
+        const msg =
+          axios.isAxiosError(err) && err.response?.data?.message
+            ? err.response.data.message
+            : err?.message || "Login failed";
+        toast.error(msg);
       }
-    }
-  };
-
-  const onRegisterSubmit = async (data) => {
-    try {
-      await dispatch(registerUser(data)).unwrap();
-      toast.success("Registration successful!");
-      setApiError(null);
-      setRegisterSuccess(true);
-      setIsRegistering(true);
-      resetRegisterForm();
-      setTimeout(() => {
-        setRegisterSuccess(false);
-        setIsRegistering(false);
-        setTab("login");
-      }, 2000); // Redirect to login tab after 2 seconds
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        toast.error(error.response?.data?.message || "Registration failed");
-        setApiError(error.response?.data?.message || "Registration failed");
-      } else {
-        setApiError("An unexpected error occurred");
-      }
-      setRegisterSuccess(false);
-      setIsRegistering(false);
-      setTimeout(() => {
-        setApiError(null);
-      }, 2000); // Clear error message after 2 seconds
-    }
-  };
-
-  const renderErrorAlert = (message) => (
-    <Alert variant="destructive" className="mb-4">
-      <AlertCircle className="h-4 w-4" />
-      <AlertTitle>Error</AlertTitle>
-      <AlertDescription>{message}</AlertDescription>
-    </Alert>
+    },
+    [dispatch, resetLoginForm, navigate]
   );
 
-  const renderSuccessAlert = () => (
-    <Alert variant="success" className="mb-4">
-      <CheckCircle className="h-4 w-4" />
-      <AlertTitle>Success!</AlertTitle>
-      <AlertDescription>
-        Registration successful! Redirecting to login...
-      </AlertDescription>
-    </Alert>
+  const onRegisterSubmit = useCallback(
+    async (data) => {
+      setIsRegistering(true);
+      try {
+        await dispatch(registerUser(data)).unwrap();
+        toast.success("Registration successful!");
+        resetRegisterForm();
+        setTab("login");
+        setIsRegistering(false);
+      } catch (err) {
+        const msg =
+          axios.isAxiosError(err) && err.response?.data?.message
+            ? err.response.data.message
+            : err?.message || "Registration failed";
+        toast.error(msg);
+        setIsRegistering(false);
+      }
+    },
+    [dispatch, resetRegisterForm]
   );
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-slate-400">
-      <div className="w-96 space-y-8">
+      <div className="w-[600px] space-y-8">
         <Tabs defaultValue="login" value={tab} onValueChange={setTab}>
           <TabsList className="grid grid-cols-2 w-full">
             <TabsTrigger value="login">Login</TabsTrigger>
@@ -136,14 +120,9 @@ const Auth = () => {
               onSubmit={handleLoginSubmit(onLoginSubmit)}
               className="space-y-6"
             >
-              {error && renderErrorAlert(error)}
               <div className="space-y-2">
                 <Input placeholder="Email" {...registerLogin("email")} />
-                {loginErrors.email && (
-                  <p className="text-sm text-red-500">
-                    {loginErrors.email.message}
-                  </p>
-                )}
+                <ErrorMessage message={loginErrors.email?.message} />
               </div>
 
               <div className="space-y-2">
@@ -152,11 +131,7 @@ const Auth = () => {
                   placeholder="Password"
                   {...registerLogin("password")}
                 />
-                {loginErrors.password && (
-                  <p className="text-sm text-red-500">
-                    {loginErrors.password.message}
-                  </p>
-                )}
+                <ErrorMessage message={loginErrors.password?.message} />
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
@@ -165,33 +140,24 @@ const Auth = () => {
             </form>
           </TabsContent>
 
+          {/* Register Tab */}
+
           <TabsContent value="register">
             <form
               onSubmit={handleRegisterSubmit(onRegisterSubmit)}
               className="space-y-6"
             >
-              {registerSuccess && renderSuccessAlert()}
-              {apiError && renderErrorAlert(apiError)}
-
               <div className="space-y-2">
                 <Input
                   placeholder="Username"
                   {...registerRegister("username")}
                 />
-                {registerErrors.username && (
-                  <p className="text-sm text-red-500">
-                    {registerErrors.username.message}
-                  </p>
-                )}
+                <ErrorMessage message={registerErrors.username?.message} />
               </div>
 
               <div className="space-y-2">
                 <Input placeholder="Email" {...registerRegister("email")} />
-                {registerErrors.email && (
-                  <p className="text-sm text-red-500">
-                    {registerErrors.email.message}
-                  </p>
-                )}
+                <ErrorMessage message={registerErrors.email?.message} />
               </div>
 
               <div className="space-y-2">
@@ -200,23 +166,11 @@ const Auth = () => {
                   placeholder="Password"
                   {...registerRegister("password")}
                 />
-                {registerErrors.password && (
-                  <p className="text-sm text-red-500">
-                    {registerErrors.password.message}
-                  </p>
-                )}
+                <ErrorMessage message={registerErrors.password?.message} />
               </div>
 
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isRegistering || registerSuccess}
-              >
-                {isRegistering
-                  ? "Registering..."
-                  : registerSuccess
-                  ? "Success!"
-                  : "Register"}
+              <Button type="submit" className="w-full" disabled={isRegistering}>
+                {isRegistering ? "Registering..." : "Register"}
               </Button>
             </form>
           </TabsContent>
