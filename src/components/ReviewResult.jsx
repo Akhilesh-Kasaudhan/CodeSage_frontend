@@ -130,22 +130,29 @@ export default function ReviewResult({
 
     return (
       text
-        // Headers
         .replace(/^# (.*$)/gm, '<h3 class="text-xl font-bold my-3">$1</h3>')
         .replace(
           /^## (.*$)/gm,
           '<h4 class="text-lg font-semibold my-2">$1</h4>'
         )
         .replace(/^### (.*$)/gm, '<h5 class="font-medium my-2">$1</h5>')
-
-        // Bold and Italic
         .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold">$1</strong>')
         .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
-
-        // Lists
         .replace(/^\s*-\s(.*$)/gm, '<li class="ml-4 list-disc">$1</li>')
         .replace(/^\s*\*\s(.*$)/gm, '<li class="ml-4 list-disc">$1</li>')
         .replace(/^\s*\d+\.\s(.*$)/gm, '<li class="ml-4 list-decimal">$1</li>')
+        .replace(/```(\w+)?\n([\s\S]*?)\n```/g, (match, lang, code) => {
+          return `<pre class="language-${
+            lang || "javascript"
+          } bg-gray-800 rounded-md p-4 my-3 overflow-x-auto"><code>${code}</code></pre>`;
+        })
+        .replace(
+          /`(.*?)`/g,
+          '<code class="bg-gray-700 px-1 py-0.5 rounded text-sm">$1</code>'
+        )
+        .replace(/([^\n])\n([^\n])/g, "$1<br/>$2")
+        .replace(/^\s*([^\n<].*$)/gm, '<p class="my-2">$1</p>')
+        .replace(/^\s*---\s*$/gm, '<hr class="my-4 border-gray-600"/>')
 
         // Code blocks
         .replace(/```(\w+)?\n([\s\S]*?)\n```/g, (match, lang, code) => {
