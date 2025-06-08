@@ -67,7 +67,7 @@ export const reviewCode = createAsyncThunk(
 export const fetchCodeHistory = createAsyncThunk(
   "review/fetchCodeHistory",
   async (_, { getState, rejectWithValue }) => {
-    const token = getState().auth.userInfo?.token; // Get the token from the auth slice
+    const token = getState().auth.userInfo?.token;
     if (!token) {
       return rejectWithValue("Authentication required");
     }

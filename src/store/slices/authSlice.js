@@ -25,13 +25,10 @@ export const registerUser = createAsyncThunk(
   "user/register",
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${baseURL}/auth/register`, userData);
-      if (!response.data.token) {
-        toast.error("Registration failed: No token received");
-        throw new Error("No token received");
-      }
-      toast.success("Registration successful!");
-      return response.data;
+      const { data } = await axios.post(`${baseURL}/auth/register`, userData);
+
+      toast.success("Registration & login successful!");
+      return data;
     } catch (err) {
       toast.error(err?.response?.data?.message || "Registration failed");
       return rejectWithValue(

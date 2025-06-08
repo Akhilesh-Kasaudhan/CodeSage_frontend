@@ -7,13 +7,15 @@ import {
 import { Toaster } from "react-hot-toast";
 import { Provider } from "react-redux";
 import { store, persistor } from "@/store";
-import Auth from "@/pages/Auth";
-import CodeReviewer from "@/pages/CodeReviewer";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AuthWrapper } from "./components/AuthWrapper";
-import NotFound from "./pages/NotFound";
 import { PersistGate } from "redux-persist/integration/react";
-import Home from "@/pages/Home";
+import React, { Suspense, lazy } from "react";
+import Loader from "./components/ui/Loader";
+const Home = lazy(() => import("@/pages/Home"));
+const Auth = lazy(() => import("@/pages/Auth"));
+const CodeReviewer = lazy(() => import("@/pages/CodeReviewer"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
 
 export default function App() {
   return (
@@ -22,19 +24,21 @@ export default function App() {
         <Router>
           <AuthWrapper>
             <Toaster position="top-right" reverseOrder={false} />
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route
-                path="/code-reviewer"
-                element={
-                  <ProtectedRoute>
-                    <CodeReviewer />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <Suspense fallback={<Loader />}>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route
+                  path="/code-reviewer"
+                  element={
+                    <ProtectedRoute>
+                      <CodeReviewer />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
           </AuthWrapper>
         </Router>
       </PersistGate>

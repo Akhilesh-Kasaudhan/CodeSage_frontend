@@ -10,7 +10,8 @@ export const AuthWrapper = ({ children }) => {
 
   useEffect(() => {
     // Verify authentication when component mounts
-    if (localStorage.getItem("userInfo")) {
+    const userInfo = localStorage.getItem("userInfo");
+    if (userInfo) {
       dispatch(verifyAuth());
     }
   }, [dispatch]);
@@ -26,7 +27,7 @@ export const AuthWrapper = ({ children }) => {
         navigate("/");
       }
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, loading, navigate]);
 
   if (loading) {
     return (
