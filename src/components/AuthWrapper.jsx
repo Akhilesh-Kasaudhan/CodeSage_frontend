@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { verifyAuth } from "@/store/slices/authSlice";
 import { useNavigate } from "react-router-dom";
+import Loader from "./ui/Loader";
 
 export const AuthWrapper = ({ children }) => {
   const dispatch = useDispatch();
@@ -30,11 +31,7 @@ export const AuthWrapper = ({ children }) => {
   }, [isAuthenticated, loading, navigate]);
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen bg-gradient-to-br from-blue-50 to-indigo-100 ">
-        <div>Loading authentication state...</div>
-      </div>
-    );
+    return <Loader />;
   }
   return children;
 };
